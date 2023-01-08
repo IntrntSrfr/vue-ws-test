@@ -17,24 +17,25 @@ const (
 	UserReady
 )
 
+// Packet represents data send over the websocket
 type Packet struct {
 	Op   OpCode      `json:"op"`
 	Data interface{} `json:"data"`
 }
 
-// Message is a struct that represents a message sent over the websocket
+// Message represents a message sent over the websocket
 type Message struct {
 	Username string `json:"username"`
 	Text     string `json:"text"`
 }
 
-// Client is a struct that represents a connected websocket client
+// Client represents a connected websocket client
 type Client struct {
 	Username string
 	Conn     *websocket.Conn
 }
 
-// Hub is a struct that maintains a list of connected clients and broadcasts messages to them
+// Hub maintains a list of connected clients and broadcasts messages to them
 type Hub struct {
 	Clients    []*Client
 	Messages   []*Message
@@ -43,6 +44,7 @@ type Hub struct {
 	Unregister chan *Client
 }
 
+// NewHub returns a default Hub
 func NewHub() *Hub {
 	hub := &Hub{
 		Clients:    []*Client{},
@@ -60,6 +62,7 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
+// Run starts a loop for reading events that come through
 func (h *Hub) Run() {
 	for {
 		select {
@@ -87,6 +90,7 @@ func (h *Hub) broadcast(msg interface{}) {
 	}
 }
 
+// UserReadyData is data that is sent to the user when the server has loaded their data
 type UserReadyData struct {
 	Messages []*Message
 	Users    []string
@@ -114,6 +118,7 @@ func (h *Hub) userConnected(c *Client) {
 	c.Conn.WriteJSON(data)
 }
 
+// UserJoinData is the data to be sent when a user joins
 type UserJoinData struct {
 	Username string
 }
@@ -128,6 +133,7 @@ func (h *Hub) userJoin(username string) {
 	h.broadcast(data)
 }
 
+// UserLeaveData is the data to be sent when a user leaves
 type UserLeaveData struct {
 	Username string
 }
@@ -142,6 +148,7 @@ func (h *Hub) userLeave(username string) {
 	h.broadcast(data)
 }
 
+// UserMessageData is the data to be sent when a user sends a message
 type UserMessageData struct {
 	Message *Message
 }
@@ -156,6 +163,7 @@ func (h *Hub) userMessage(msg *Message) {
 	h.broadcast(data)
 }
 
+// Handler returns the websocket handler for the Hub
 func (h *Hub) Handler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)

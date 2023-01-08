@@ -27,3 +27,7 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+# Compiled executable
+api/cmd/api/*
+!*.go
