@@ -1,11 +1,10 @@
 <template>
     <div>
-        <AppChat />
+
     </div>
 </template>
 
 <script setup>
-import AppChat from './AppChat.vue';
 
 </script>
 
