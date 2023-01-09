@@ -16,5 +16,8 @@ func main() {
 
 	port := ":8080"
 	fmt.Println("running hub at port", port)
-	http.ListenAndServe(port, nil)
+	err := http.ListenAndServe(port, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
 }

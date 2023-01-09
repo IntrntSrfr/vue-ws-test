@@ -79,6 +79,7 @@ func (h *Hub) Run() {
 			}
 			h.userLeave(client.Username)
 		case message := <-h.Message:
+			fmt.Println(message)
 			h.userMessage(message)
 		}
 	}
@@ -92,8 +93,8 @@ func (h *Hub) broadcast(msg interface{}) {
 
 // UserReadyData is data that is sent to the user when the server has loaded their data
 type UserReadyData struct {
-	Messages []*Message
-	Users    []string
+	Messages []*Message `json:"messages"`
+	Users    []string   `json:"users"`
 }
 
 func (h *Hub) userConnected(c *Client) {
@@ -120,7 +121,7 @@ func (h *Hub) userConnected(c *Client) {
 
 // UserJoinData is the data to be sent when a user joins
 type UserJoinData struct {
-	Username string
+	Username string `json:"username"`
 }
 
 func (h *Hub) userJoin(username string) {
@@ -135,7 +136,7 @@ func (h *Hub) userJoin(username string) {
 
 // UserLeaveData is the data to be sent when a user leaves
 type UserLeaveData struct {
-	Username string
+	Username string `json:"username"`
 }
 
 func (h *Hub) userLeave(username string) {
@@ -150,7 +151,7 @@ func (h *Hub) userLeave(username string) {
 
 // UserMessageData is the data to be sent when a user sends a message
 type UserMessageData struct {
-	Message *Message
+	Message *Message `json:"message"`
 }
 
 func (h *Hub) userMessage(msg *Message) {
