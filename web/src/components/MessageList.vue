@@ -1,6 +1,6 @@
 <template>
     <div class="message-list">
-        <MessageListItem v-for="(msg, i) in messages" :key="i" :msg="msg"/> 
+        <MessageListItem v-for="(msg, i) in messages" :key="i" :author="msg.username" :content="msg.text"/> 
     </div>
 </template>
 
@@ -13,5 +13,9 @@ defineProps({
 </script>
 
 <style scoped>
+
+.message + .message{
+    border-top: 1px solid gray;
+}
 
 </style>

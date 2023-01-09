@@ -1,10 +1,14 @@
 <template>
-    <div>
-        i am a user
+    <div class="user">
+        {{ username }}
     </div>
 </template>
 
 <script setup>
+
+defineProps({
+    username: String
+})
 
 </script>
 

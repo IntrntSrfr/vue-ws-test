@@ -1,10 +1,20 @@
 <template>
-    <div>
-        i am a message
+    <div class="message">
+        <div class="author">
+            {{ author }}
+        </div>
+        <div class="content">
+            {{ content }}
+        </div>
     </div>
 </template>
 
 <script setup>
+
+defineProps({
+    author: String,
+    content: String
+})
 
 </script>
 

@@ -22,29 +22,29 @@ export const useMainStore = defineStore('main', () => {
     }
     
     ws.onmessage = (data) => {
-        console.log(data.data);
         const msg = JSON.parse(data.data)
-        if(!msg?.op) return
+        if(!msg || msg.op === 'undefined') return
 
         switch (msg.op) {
             case 0: // join
+                state.users = [msg.data.username, ...state.users]
                 break;
             case 1: // leave
+                state.users = state.users.filter(u => u !== msg.data.username)
                 break;
             case 2: // message
+                state.messages = [msg.data.message, ...state.messages]
                 break;
             case 3: // ping 
                 break;
             case 4: // ready
                 state.messages = msg.data.messages
                 state.users = msg.data.users
-
                 break;
         
             default:
                 break;
         }
-        console.log("message", msg);
     }
 
     socket.value = ws

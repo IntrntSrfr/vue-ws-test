@@ -3,7 +3,9 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -23,16 +25,10 @@ type Packet struct {
 	Data interface{} `json:"data"`
 }
 
-// Message represents a message sent over the websocket
-type Message struct {
-	Username string `json:"username"`
-	Text     string `json:"text"`
-}
-
 // Client represents a connected websocket client
 type Client struct {
-	Username string
-	Conn     *websocket.Conn
+	User *User
+	Conn *websocket.Conn
 }
 
 // Hub maintains a list of connected clients and broadcasts messages to them
@@ -62,6 +58,43 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
+// Handler returns the websocket handler for the Hub
+func (h *Hub) Handler() func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer conn.Close()
+
+		fmt.Println("new connection")
+
+		username := r.URL.Query().Get("username")
+		if username == "" {
+			return
+		}
+
+		// ideally grab a user from some db?
+		client := &Client{User: &User{ID: uuid.New(), Username: username, Created: time.Now().Format(time.RFC3339)}, Conn: conn}
+		h.Register <- client // this will move later
+
+		for {
+			var message Message
+			err := conn.ReadJSON(&message)
+			if err != nil {
+				fmt.Println(err)
+				break
+			}
+			message.Username = username
+			message.Timestamp = time.Now().Format(time.RFC3339)
+			h.Message <- &message
+		}
+
+		h.Unregister <- client
+	}
+}
+
 // Run starts a loop for reading events that come through
 func (h *Hub) Run() {
 	for {
@@ -69,7 +102,7 @@ func (h *Hub) Run() {
 		case client := <-h.Register:
 			h.userConnected(client)
 			h.Clients = append(h.Clients, client)
-			h.userJoin(client.Username)
+			h.userJoin(client.User)
 		case client := <-h.Unregister:
 			for i, c := range h.Clients {
 				if c == client {
@@ -77,9 +110,10 @@ func (h *Hub) Run() {
 					break
 				}
 			}
-			h.userLeave(client.Username)
+			h.userLeave(client.User)
 		case message := <-h.Message:
 			fmt.Println(message)
+			h.Messages = append(h.Messages, message)
 			h.userMessage(message)
 		}
 	}
@@ -94,14 +128,14 @@ func (h *Hub) broadcast(msg interface{}) {
 // UserReadyData is data that is sent to the user when the server has loaded their data
 type UserReadyData struct {
 	Messages []*Message `json:"messages"`
-	Users    []string   `json:"users"`
+	Users    []*User    `json:"users"`
 }
 
 func (h *Hub) userConnected(c *Client) {
 	msgs := h.Messages[len(h.Messages)-min(len(h.Messages), 50):]
-	users := []string{}
+	users := []*User{}
 	for _, client := range h.Clients {
-		users = append(users, client.Username)
+		users = append(users, client.User)
 	}
 
 	// send all clients and last 50 messages
@@ -121,14 +155,14 @@ func (h *Hub) userConnected(c *Client) {
 
 // UserJoinData is the data to be sent when a user joins
 type UserJoinData struct {
-	Username string `json:"username"`
+	User *User `json:"user"`
 }
 
-func (h *Hub) userJoin(username string) {
+func (h *Hub) userJoin(user *User) {
 	data := Packet{
 		Op: UserJoin,
 		Data: UserJoinData{
-			Username: username,
+			User: user,
 		},
 	}
 	h.broadcast(data)
@@ -136,14 +170,14 @@ func (h *Hub) userJoin(username string) {
 
 // UserLeaveData is the data to be sent when a user leaves
 type UserLeaveData struct {
-	Username string `json:"username"`
+	User *User `json:"user"`
 }
 
-func (h *Hub) userLeave(username string) {
+func (h *Hub) userLeave(user *User) {
 	data := Packet{
 		Op: UserLeave,
 		Data: UserLeaveData{
-			Username: username,
+			User: user,
 		},
 	}
 	h.broadcast(data)
@@ -162,39 +196,4 @@ func (h *Hub) userMessage(msg *Message) {
 		},
 	}
 	h.broadcast(data)
-}
-
-// Handler returns the websocket handler for the Hub
-func (h *Hub) Handler() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		defer conn.Close()
-
-		fmt.Println("new connection")
-
-		username := r.URL.Query().Get("username")
-		if username == "" {
-			return
-		}
-
-		client := &Client{Username: username, Conn: conn}
-		h.Register <- client
-
-		for {
-			var message Message
-			err := conn.ReadJSON(&message)
-			if err != nil {
-				fmt.Println(err)
-				break
-			}
-			message.Username = username
-			h.Message <- &message
-		}
-
-		h.Unregister <- client
-	}
 }

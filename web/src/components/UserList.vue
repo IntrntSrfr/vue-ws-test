@@ -1,6 +1,6 @@
 <template>
     <div class="user-list">
-        <UserListItem v-for="(usr, i) in users" :key="i" :user="usr"/> 
+        <UserListItem v-for="(usr, i) in users" :key="i" :username="usr"/> 
     </div>
 </template>
 

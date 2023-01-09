@@ -1,6 +1,7 @@
 <template>
     <div class="chat">
         <div class="messages">
+            <h2>Messages</h2>
             <MessageList :messages="mainStore.messages"/>
             <div class="chat-input">
                 <AppInput :text="message" @input="setMessage" />
@@ -8,6 +9,7 @@
             </div>
         </div>
         <div class="users">
+            <h2>Users</h2>
             <UserList :users="mainStore.users"/>
         </div>
     </div>
@@ -32,5 +34,15 @@ const setMessage = (newMsg) => {
 </script>
 
 <style scoped>
+
+.chat{
+    display: flex;
+    flex-direction: row;
+}
+
+.messages, .users {
+    border: 1px solid rgb(184, 184, 184);
+}
+
 
 </style>
