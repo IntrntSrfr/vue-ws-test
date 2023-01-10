@@ -7,7 +7,7 @@ type Message struct {
 	Username  string      `json:"username"`
 	Text      string      `json:"text"`
 	Timestamp string      `json:"timestamp"`
-	Reactions []*Reaction `json:"reactions"`
+	Reactions []*Reaction `json:"reactions,omitempty"`
 }
 
 // Reaction represents a message reaction

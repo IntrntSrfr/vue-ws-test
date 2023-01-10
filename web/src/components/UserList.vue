@@ -1,6 +1,6 @@
 <template>
     <div class="user-list">
-        <UserListItem v-for="(usr, i) in users" :key="i" :username="usr"/> 
+        <UserListItem v-for="(usr, i) in users" :key="i" :username="usr.username"/> 
     </div>
 </template>
 
@@ -14,4 +14,16 @@ defineProps({
 
 <style scoped>
 
+
+.user-list {
+    display: flex;
+    flex-direction: column;
+
+    overflow-y: auto;
+}
+
+
+.user + .user{
+    border-top: 1px solid gray;
+}
 </style>

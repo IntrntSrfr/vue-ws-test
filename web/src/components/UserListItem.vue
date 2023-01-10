@@ -14,4 +14,9 @@ defineProps({
 
 <style scoped>
 
+.user {
+    padding: .5em;
+    font-weight: bold;
+}
+
 </style>

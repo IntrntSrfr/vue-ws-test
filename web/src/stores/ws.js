@@ -13,11 +13,9 @@ export const useMainStore = defineStore('main', () => {
     const ws = new WebSocket(`ws://localhost:8080/ws?username=${username.value}`)
 
     ws.onopen = (e) => {
-        console.log("open", e);
     }
     
     ws.onclose = (e) => {
-        console.log("close", e);
         socket.value = null
     }
     
@@ -27,13 +25,13 @@ export const useMainStore = defineStore('main', () => {
 
         switch (msg.op) {
             case 0: // join
-                state.users = [msg.data.username, ...state.users]
+                state.users = [...state.users, msg.data.user]
                 break;
             case 1: // leave
-                state.users = state.users.filter(u => u !== msg.data.username)
+                state.users = state.users.filter(u => u.id !== msg.data.user.id)
                 break;
             case 2: // message
-                state.messages = [msg.data.message, ...state.messages]
+                state.messages = [...state.messages, msg.data.message]
                 break;
             case 3: // ping 
                 break;

@@ -1,7 +1,12 @@
 <template>
     <div class="message">
-        <div class="author">
-            {{ author }}
+        <div class="header">
+            <div class="author">
+                {{ author }}
+            </div>
+            <div class="timestamp">
+                {{ moment(timestamp).calendar() }}
+            </div>
         </div>
         <div class="content">
             {{ content }}
@@ -10,14 +15,38 @@
 </template>
 
 <script setup>
+import moment from 'moment' // consider moving to list to reduce imports?
 
 defineProps({
     author: String,
-    content: String
+    content: String,
+    timestamp: String
 })
 
 </script>
 
 <style scoped>
+.message{
+    display: flex;
+    flex-direction: column;
+    padding: .5em;
+}
+
+.header{
+    display:flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.author{
+    font-weight: bold;
+}
+
+.timestamp{
+    margin-left: .25em;
+    color: rgba(235, 235, 235, 0.64);
+    font-size: .75rem;
+    font-weight: lighter;
+}
 
 </style>

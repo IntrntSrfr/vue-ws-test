@@ -36,12 +36,35 @@ const setMessage = (newMsg) => {
 <style scoped>
 
 .chat{
+    height: 100%;
     display: flex;
     flex-direction: row;
 }
 
 .messages, .users {
     border: 1px solid rgb(184, 184, 184);
+}
+
+.messages {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-input{
+    background-color: var(--color-background-soft);
+}
+
+.users {
+    display: flex;
+    flex-direction: column;
+    width: 15em;
+}
+
+h2 {
+    padding: .5em 1em;
+    background-color: var(--color-background-soft);
+    font-weight: bold;
 }
 
 
