@@ -39,6 +39,7 @@ const setMessage = (newMsg) => {
     height: 100%;
     display: flex;
     flex-direction: row;
+    gap: 1em;
 }
 
 .messages, .users {
