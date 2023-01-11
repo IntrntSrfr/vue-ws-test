@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
@@ -59,9 +60,9 @@ var upgrader = websocket.Upgrader{
 }
 
 // Handler returns the websocket handler for the Hub
-func (h *Hub) Handler() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil)
+func (h *Hub) Handler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -70,7 +71,7 @@ func (h *Hub) Handler() func(http.ResponseWriter, *http.Request) {
 
 		fmt.Println("new connection")
 
-		username := r.URL.Query().Get("username")
+		username := c.Query("username")
 		if username == "" {
 			return
 		}
@@ -95,8 +96,8 @@ func (h *Hub) Handler() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-// Run starts a loop for reading events that come through
-func (h *Hub) Run() {
+// Listen starts a loop for reading events that come through
+func (h *Hub) Listen() {
 	for {
 		select {
 		case client := <-h.Register:

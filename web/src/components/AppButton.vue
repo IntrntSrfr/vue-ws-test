@@ -31,7 +31,6 @@ defineProps({
 .btn:hover{
     border-color:rgb(71, 163, 255);
     background-color:rgb(0, 33, 66);
-    
 }
 
 </style>

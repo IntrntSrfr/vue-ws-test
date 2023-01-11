@@ -4,6 +4,7 @@ import "github.com/google/uuid"
 
 // Message represents a message sent over the websocket
 type Message struct {
+	ID        uuid.UUID   `json:"id"`
 	Username  string      `json:"username"`
 	Text      string      `json:"text"`
 	Timestamp string      `json:"timestamp"`
