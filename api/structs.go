@@ -21,5 +21,6 @@ type Reaction struct {
 type User struct {
 	ID       uuid.UUID `json:"id"`
 	Username string    `json:"username"`
+	Password string    `json:"-"`
 	Created  string    `json:"created"`
 }

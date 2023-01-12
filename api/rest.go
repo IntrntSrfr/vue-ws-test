@@ -22,21 +22,25 @@ type ErrorResponse struct {
 type Handler struct {
 	e  *gin.Engine
 	ws *Hub
+	db DB
 }
 
 type Config struct {
-	JwtUtil *JWTUtil
+	JwtUtil JWTService
+	db      DB
 }
 
 func NewHandler(conf *Config) *Handler {
 	h := &Handler{
 		gin.Default(),
 		NewHub(),
+		conf.db,
 	}
-	h.e.Use(Cors())
-	h.ws.Listen()
 
-	//NewAuthHandler(h.e, conf.OauthConfig, conf.JwtUtil)
+	h.e.Use(Cors())
+	go h.ws.Listen()
+
+	NewAuthHandler(h.e, conf.db, conf.JwtUtil)
 	//NewGuildHandler(h.e, conf.Discord, conf.JwtUtil)
 
 	h.e.GET("/api/health", func(c *gin.Context) {

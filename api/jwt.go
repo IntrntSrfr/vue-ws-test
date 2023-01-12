@@ -8,13 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/google/uuid"
 )
 
 type JWTService interface {
-	ValidateToken(token string) (*jwt.Token, error)
-	GenerateToken(id string, expiry time.Time) (string, error)
-	JWT() gin.HandlerFunc
+	ParseToken(token string) (*UserClaims, error)
+	GenerateToken(user *User) (string, error)
+	IsAuthorized() gin.HandlerFunc
 }
 
 type JWTUtil struct {
@@ -25,19 +24,37 @@ func NewJWTUtil(key []byte) *JWTUtil {
 	return &JWTUtil{key}
 }
 
-type Claims struct {
+type UserClaims struct {
 	jwt.RegisteredClaims
+	Username string
 }
 
-func (j *JWTUtil) GenerateToken(id uuid.UUID, expiry time.Time) (string, error) {
+func (j *JWTUtil) ParseToken(tokenStr string) (*UserClaims, error) {
+	var claims UserClaims
+	token, err := jwt.ParseWithClaims(tokenStr, &claims, func(token *jwt.Token) (interface{}, error) {
+		return j.key, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if !token.Valid {
+		return nil, err
+	}
+
+	return &claims, nil
+}
+
+func (j *JWTUtil) GenerateToken(user *User) (string, error) {
 	tkn := jwt.New(jwt.SigningMethodHS256)
-	claims := Claims{
+	claims := UserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "RMM",
-			Subject:   id.String(),
-			ExpiresAt: jwt.NewNumericDate(expiry),
+			Subject:   user.ID.String(),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 3)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
+		Username: user.Username,
 	}
 
 	tkn.Claims = claims
@@ -52,7 +69,7 @@ func (j *JWTUtil) IsAuthorized() gin.HandlerFunc {
 			return
 		}
 		tokenString := strings.TrimPrefix(auth, "Bearer ")
-		token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(tokenString, &UserClaims{}, func(t *jwt.Token) (interface{}, error) {
 			return j.key, nil
 		})
 		if err != nil {
