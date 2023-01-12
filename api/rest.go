@@ -1,7 +1,12 @@
 package api
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -27,20 +32,20 @@ type Handler struct {
 
 type Config struct {
 	JwtUtil JWTService
-	db      DB
+	DB      DB
 }
 
 func NewHandler(conf *Config) *Handler {
 	h := &Handler{
 		gin.Default(),
-		NewHub(),
-		conf.db,
+		NewHub(conf.DB),
+		conf.DB,
 	}
 
 	h.e.Use(Cors())
 	go h.ws.Listen()
 
-	NewAuthHandler(h.e, conf.db, conf.JwtUtil)
+	NewAuthHandler(h.e, conf.DB, conf.JwtUtil)
 	//NewGuildHandler(h.e, conf.Discord, conf.JwtUtil)
 
 	h.e.GET("/api/health", func(c *gin.Context) {
@@ -53,7 +58,22 @@ func NewHandler(conf *Config) *Handler {
 }
 
 func (h *Handler) Run(address string) error {
-	return h.e.Run(address)
+	srv := &http.Server{
+		Addr:    address,
+		Handler: h.e,
+	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Println("ERROR:", err)
+		}
+	}()
+
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	return srv.Shutdown(context.Background())
 }
 
 func Cors() gin.HandlerFunc {

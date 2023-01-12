@@ -35,7 +35,7 @@ func (h *AuthHandler) login() gin.HandlerFunc {
 			return
 		}
 
-		user := h.db.FindUserByID(loginBody.Username)
+		user := h.db.FindUserByUsername(loginBody.Username)
 		if user == nil || loginBody.Password != user.Password {
 			c.JSON(http.StatusUnauthorized, ErrorResponse{CodeError, "invalid username or password"})
 			return
@@ -66,7 +66,7 @@ func (h *AuthHandler) register() gin.HandlerFunc {
 			return
 		}
 
-		user := h.db.FindUserByID(registerBody.Username)
+		user := h.db.FindUserByUsername(registerBody.Username)
 		if user != nil {
 			c.JSON(http.StatusConflict, ErrorResponse{CodeError, "username already taken"})
 			return

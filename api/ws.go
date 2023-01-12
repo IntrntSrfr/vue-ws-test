@@ -28,8 +28,9 @@ type Packet struct {
 
 // Client represents a connected websocket client
 type Client struct {
-	User *User
-	Conn *websocket.Conn
+	User  *User
+	Conn  *websocket.Conn
+	Ready bool
 }
 
 // Hub maintains a list of connected clients and broadcasts messages to them
@@ -39,16 +40,18 @@ type Hub struct {
 	Message    chan *Message
 	Register   chan *Client
 	Unregister chan *Client
+	db         DB
 }
 
 // NewHub returns a default Hub
-func NewHub() *Hub {
+func NewHub(db DB) *Hub {
 	hub := &Hub{
 		Clients:    []*Client{},
 		Messages:   []*Message{},
 		Message:    make(chan *Message),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
+		db:         db,
 	}
 	return hub
 }
@@ -87,7 +90,7 @@ func (h *Hub) Handler() gin.HandlerFunc {
 				fmt.Println(err)
 				break
 			}
-			message.Username = username
+			message.Author = client.User
 			message.Timestamp = time.Now().Format(time.RFC3339)
 			h.Message <- &message
 		}

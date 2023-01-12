@@ -23,10 +23,25 @@ func main() {
 		panic("mangled config file, fix it")
 	}
 
+	// dependencies
+	db, err := api.Open("./data.json")
+	if err != nil {
+		panic(err)
+	}
+	defer func(db *api.JsonDB) {
+		err := db.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(db)
+
 	jwtUtil := api.NewJWTUtil([]byte(config.JWTKey))
 
-	handler := api.NewHandler(&api.Config{JwtUtil: jwtUtil})
+	// server
+	handler := api.NewHandler(&api.Config{JwtUtil: jwtUtil, DB: db})
 
+	// run server
+	// this will block
 	err = handler.Run(":8080")
 	if err != nil {
 		fmt.Println(err)

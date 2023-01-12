@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -11,7 +12,7 @@ import (
 )
 
 type JWTService interface {
-	ParseToken(token string) (*UserClaims, error)
+	ParseToken(token string) (jwt.Claims, error)
 	GenerateToken(user *User) (string, error)
 	IsAuthorized() gin.HandlerFunc
 }
@@ -29,9 +30,8 @@ type UserClaims struct {
 	Username string
 }
 
-func (j *JWTUtil) ParseToken(tokenStr string) (*UserClaims, error) {
-	var claims UserClaims
-	token, err := jwt.ParseWithClaims(tokenStr, &claims, func(token *jwt.Token) (interface{}, error) {
+func (j *JWTUtil) ParseToken(tokenStr string) (jwt.Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return j.key, nil
 	})
 	if err != nil {
@@ -39,10 +39,10 @@ func (j *JWTUtil) ParseToken(tokenStr string) (*UserClaims, error) {
 	}
 
 	if !token.Valid {
-		return nil, err
+		return nil, errors.New("invalid token")
 	}
 
-	return &claims, nil
+	return token.Claims, nil
 }
 
 func (j *JWTUtil) GenerateToken(user *User) (string, error) {
