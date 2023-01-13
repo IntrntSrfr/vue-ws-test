@@ -49,7 +49,7 @@ func (j *JWTUtil) GenerateToken(user *User) (string, error) {
 	tkn := jwt.New(jwt.SigningMethodHS256)
 	claims := UserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    "RMM",
+			Issuer:    "ws-test",
 			Subject:   user.ID.String(),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 3)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

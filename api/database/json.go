@@ -1,41 +1,31 @@
-package api
+package database
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/goccy/go-json"
+	api "github.com/intrntsrfr/vue-ws-test"
+	"github.com/intrntsrfr/vue-ws-test/util"
 	"os"
 	"sync"
 )
 
-type DB interface {
-	CreateUser(u *User) (*User, error)
-	FindUserByID(id string) *User
-	FindUserByUsername(username string) *User
-
-	CreateMessage(m *Message) (*Message, error)
-	GetMessages() []*Message
-
-	CreateReaction(messageID string, emoji rune) error
-	DeleteReaction(messageID string, emoji rune) error
-}
-
 type JsonDB struct {
 	path  string
-	state *State
+	state *state
 }
 
-type State struct {
+type state struct {
 	sync.Mutex
-	Users    []*User    `json:"users"`
-	Messages []*Message `json:"messages"`
+	Users    []*api.User    `json:"users"`
+	Messages []*api.Message `json:"messages"`
 }
 
 func Open(path string) (*JsonDB, error) {
 	db := &JsonDB{
 		path: path,
-		state: &State{
-			Users:    make([]*User, 0),
-			Messages: make([]*Message, 0),
+		state: &state{
+			Users:    make([]*api.User, 0),
+			Messages: make([]*api.Message, 0),
 		},
 	}
 	err := db.load(path)
@@ -59,7 +49,7 @@ func (j *JsonDB) load(path string) error {
 		return err
 	}
 
-	state := &State{}
+	state := &state{}
 	err = json.Unmarshal(d, &state)
 	if err != nil {
 		return err
@@ -84,14 +74,14 @@ func (j *JsonDB) save() error {
 	return err
 }
 
-func (j *JsonDB) CreateUser(u *User) (*User, error) {
+func (j *JsonDB) CreateUser(u *api.User) (*api.User, error) {
 	j.state.Lock()
 	defer j.state.Unlock()
 	j.state.Users = append(j.state.Users, u)
 	return u, nil
 }
 
-func (j *JsonDB) FindUserByID(id string) *User {
+func (j *JsonDB) FindUserByID(id string) *api.User {
 	j.state.Lock()
 	defer j.state.Unlock()
 	for _, u := range j.state.Users {
@@ -102,7 +92,7 @@ func (j *JsonDB) FindUserByID(id string) *User {
 	return nil
 }
 
-func (j *JsonDB) FindUserByUsername(username string) *User {
+func (j *JsonDB) FindUserByUsername(username string) *api.User {
 	j.state.Lock()
 	defer j.state.Unlock()
 	for _, u := range j.state.Users {
@@ -113,17 +103,17 @@ func (j *JsonDB) FindUserByUsername(username string) *User {
 	return nil
 }
 
-func (j *JsonDB) CreateMessage(m *Message) (*Message, error) {
+func (j *JsonDB) CreateMessage(m *api.Message) (*api.Message, error) {
 	j.state.Lock()
 	defer j.state.Unlock()
 	j.state.Messages = append(j.state.Messages, m)
 	return m, nil
 }
 
-func (j *JsonDB) GetMessages() []*Message {
+func (j *JsonDB) GetMessages() []*api.Message {
 	j.state.Lock()
 	defer j.state.Unlock()
-	return j.state.Messages[len(j.state.Messages)-min(len(j.state.Messages), 50):]
+	return j.state.Messages[len(j.state.Messages)-util.Min(len(j.state.Messages), 50):]
 }
 
 func (j *JsonDB) CreateReaction(messageID string, emoji rune) error {

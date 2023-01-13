@@ -1,7 +1,9 @@
-package api
+package handler
 
 import (
 	"github.com/google/uuid"
+	"github.com/intrntsrfr/vue-ws-test"
+	"github.com/intrntsrfr/vue-ws-test/database"
 	"net/http"
 	"time"
 
@@ -10,11 +12,11 @@ import (
 
 type AuthHandler struct {
 	r   *gin.Engine
-	db  DB
-	jwt JWTService
+	db  database.DB
+	jwt api.JWTService
 }
 
-func NewAuthHandler(r *gin.Engine, db DB, jwtService JWTService) {
+func NewAuthHandler(r *gin.Engine, db database.DB, jwtService api.JWTService) {
 	h := &AuthHandler{r, db, jwtService}
 
 	g := h.r.Group("/api/auth")
@@ -72,7 +74,7 @@ func (h *AuthHandler) register() gin.HandlerFunc {
 			return
 		}
 
-		user, err := h.db.CreateUser(&User{
+		user, err := h.db.CreateUser(&api.User{
 			ID:       uuid.New(),
 			Username: registerBody.Username,
 			Password: registerBody.Password,

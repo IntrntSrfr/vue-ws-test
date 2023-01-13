@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/intrntsrfr/vue-ws-test/database"
+	"github.com/intrntsrfr/vue-ws-test/handler"
 	"os"
 
 	api "github.com/intrntsrfr/vue-ws-test"
@@ -24,11 +26,11 @@ func main() {
 	}
 
 	// dependencies
-	db, err := api.Open("./data.json")
+	db, err := database.Open("./data.json")
 	if err != nil {
 		panic(err)
 	}
-	defer func(db *api.JsonDB) {
+	defer func(db *database.JsonDB) {
 		err := db.Close()
 		if err != nil {
 			fmt.Println(err)
@@ -38,11 +40,11 @@ func main() {
 	jwtUtil := api.NewJWTUtil([]byte(config.JWTKey))
 
 	// server
-	handler := api.NewHandler(&api.Config{JwtUtil: jwtUtil, DB: db})
+	h := handler.NewHandler(&handler.Config{JwtUtil: jwtUtil, DB: db})
 
 	// run server
 	// this will block
-	err = handler.Run(":8080")
+	err = h.Run(":8080")
 	if err != nil {
 		fmt.Println(err)
 	}

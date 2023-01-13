@@ -1,8 +1,10 @@
-package api
+package handler
 
 import (
 	"context"
 	"fmt"
+	"github.com/intrntsrfr/vue-ws-test"
+	"github.com/intrntsrfr/vue-ws-test/database"
 	"net/http"
 	"os"
 	"os/signal"
@@ -27,12 +29,12 @@ type ErrorResponse struct {
 type Handler struct {
 	e  *gin.Engine
 	ws *Hub
-	db DB
+	db database.DB
 }
 
 type Config struct {
-	JwtUtil JWTService
-	DB      DB
+	JwtUtil api.JWTService
+	DB      database.DB
 }
 
 func NewHandler(conf *Config) *Handler {
@@ -43,9 +45,10 @@ func NewHandler(conf *Config) *Handler {
 	}
 
 	h.e.Use(Cors())
-	go h.ws.Listen()
 
 	NewAuthHandler(h.e, conf.DB, conf.JwtUtil)
+	NewMessageHandler(h.e, conf.DB, conf.JwtUtil, h.ws)
+
 	//NewGuildHandler(h.e, conf.Discord, conf.JwtUtil)
 
 	h.e.GET("/api/health", func(c *gin.Context) {
@@ -62,6 +65,8 @@ func (h *Handler) Run(address string) error {
 		Addr:    address,
 		Handler: h.e,
 	}
+
+	go h.ws.Listen()
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
