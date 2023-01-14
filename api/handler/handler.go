@@ -49,8 +49,6 @@ func NewHandler(conf *Config) *Handler {
 	NewAuthHandler(h.e, conf.DB, conf.JwtUtil)
 	NewMessageHandler(h.e, conf.DB, conf.JwtUtil, h.ws)
 
-	//NewGuildHandler(h.e, conf.Discord, conf.JwtUtil)
-
 	h.e.GET("/api/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
@@ -84,7 +82,7 @@ func (h *Handler) Run(address string) error {
 func Cors() gin.HandlerFunc {
 	return cors.New(cors.Config{
 		AllowAllOrigins:  true,
-		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
+		AllowMethods:     []string{"GET", "POST", "OPTIONS", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Authorization"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,

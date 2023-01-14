@@ -128,7 +128,9 @@ func (h *Hub) Listen() {
 
 func (h *Hub) broadcast(msg interface{}) {
 	for _, client := range h.Clients {
-		client.Conn.WriteJSON(msg)
+		if client.Ready {
+			client.Conn.WriteJSON(msg)
+		}
 	}
 }
 
@@ -142,7 +144,9 @@ func (h *Hub) userConnected(c *Client) {
 	msgs := h.Messages[len(h.Messages)-util.Min(len(h.Messages), 50):]
 	users := []*api.User{}
 	for _, client := range h.Clients {
-		users = append(users, client.User)
+		if client.Ready {
+			users = append(users, client.User)
+		}
 	}
 
 	// send all clients and last 50 messages

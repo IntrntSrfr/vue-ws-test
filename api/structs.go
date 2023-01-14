@@ -6,7 +6,7 @@ import "github.com/google/uuid"
 type Message struct {
 	ID        uuid.UUID   `json:"id"`
 	Author    *User       `json:"author"`
-	Text      string      `json:"text"`
+	Content   string      `json:"content"`
 	Timestamp string      `json:"timestamp"`
 	Reactions []*Reaction `json:"reactions,omitempty"`
 }
