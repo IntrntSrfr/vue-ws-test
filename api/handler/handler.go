@@ -3,13 +3,14 @@ package handler
 import (
 	"context"
 	"fmt"
-	"github.com/intrntsrfr/vue-ws-test"
-	"github.com/intrntsrfr/vue-ws-test/database"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	api "github.com/intrntsrfr/vue-ws-test"
+	"github.com/intrntsrfr/vue-ws-test/database"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -64,7 +65,7 @@ func (h *Handler) Run(address string) error {
 		Handler: h.e,
 	}
 
-	go h.ws.Listen()
+	go h.ws.Run()
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

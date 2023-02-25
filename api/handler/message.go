@@ -35,7 +35,6 @@ func (h *MessageHandler) postMessage() gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
-
 		var postMessageBody PostMessageBody
 		if err := c.BindJSON(&postMessageBody); err != nil || strings.TrimSpace(postMessageBody.Content) == "" {
 			c.JSON(http.StatusBadRequest, ErrorResponse{CodeError, "bad request"})
@@ -66,7 +65,8 @@ func (h *MessageHandler) postMessage() gin.HandlerFunc {
 		fmt.Println(msg)
 
 		c.JSON(http.StatusOK, msg)
-		h.ws.userMessage(msg)
+		//h.ws.userMessage(msg)
+		h.ws.dispatchEvent(UserMessage, nil, msg)
 	}
 }
 

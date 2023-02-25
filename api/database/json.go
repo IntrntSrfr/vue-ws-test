@@ -3,10 +3,10 @@ package database
 import (
 	"encoding/json"
 	"fmt"
-	api "github.com/intrntsrfr/vue-ws-test"
-	"github.com/intrntsrfr/vue-ws-test/util"
 	"os"
 	"sync"
+
+	api "github.com/intrntsrfr/vue-ws-test"
 )
 
 type JsonDB struct {
@@ -101,27 +101,4 @@ func (j *JsonDB) FindUserByUsername(username string) *api.User {
 		}
 	}
 	return nil
-}
-
-func (j *JsonDB) CreateMessage(m *api.Message) (*api.Message, error) {
-	j.state.Lock()
-	defer j.state.Unlock()
-	j.state.Messages = append(j.state.Messages, m)
-	return m, nil
-}
-
-func (j *JsonDB) GetMessages() []*api.Message {
-	j.state.Lock()
-	defer j.state.Unlock()
-	return j.state.Messages[len(j.state.Messages)-util.Min(len(j.state.Messages), 50):]
-}
-
-func (j *JsonDB) CreateReaction(messageID string, emoji rune) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (j *JsonDB) DeleteReaction(messageID string, emoji rune) error {
-	//TODO implement me
-	panic("implement me")
 }
