@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	api "github.com/intrntsrfr/vue-ws-test"
 	"github.com/intrntsrfr/vue-ws-test/database"
@@ -58,14 +59,32 @@ type PingData struct {
 }
 
 type ErrorData struct {
-	Code int `json:"code"`
+	Code    ErrorCode `json:"code"`
+	Message string    `json:"message"`
 }
+
+type ErrorCode int
+
+const (
+	UnknownError ErrorCode = iota
+	PingTimedOut
+	AuthFailed
+)
+
+var (
+	ErrUnknownError = errors.New("unknown error")
+	ErrPingTimedOut = errors.New("no ping for too long")
+	ErrAuthFailed   = errors.New("authentication failed")
+)
+
+var ErrNoSuchError = errors.New("no such error")
 
 // Client represents a connected websocket client
 type Client struct {
 	User       *api.User
 	Conn       *websocket.Conn
 	Identified bool
+	LastPing   time.Time
 }
 
 // Hub maintains a list of connected clients and broadcasts messages to them
@@ -144,9 +163,9 @@ func (h *Hub) listenEvents() {
 				if e, ok := evt.Event.Data.(*IdentifyData); ok {
 					h.identifyClient(evt.Client, e)
 				}
-			} else if evt.Event.Op == PingACK {
+			} else if evt.Event.Op == Ping {
 				if e, ok := evt.Event.Data.(*PingData); ok {
-					h.handlePingACK(evt.Client, e)
+					h.handlePing(evt.Client, e)
 				}
 			}
 		}
@@ -155,17 +174,12 @@ func (h *Hub) listenEvents() {
 
 func (h *Hub) identifyClient(client *Client, evt *IdentifyData) {
 	// check JWT and check againt database
-	// if good, set as identified, otherwise return error data
+	// if good, set as identified, otherwise h.disconnectClient(client, AuthFailed)
 }
 
-func (h *Hub) handlePingACK(client *Client, evt *PingData) {
+func (h *Hub) handlePing(client *Client, evt *PingData) {
 
 }
-
-// UserReady ActionCode = iota
-// UserJoin
-// UserLeave
-// UserMessage
 
 type DispatchEvent func(conn *Client, data interface{}) error
 
@@ -197,9 +211,37 @@ func (h *Hub) removeClient(client *Client) {
 	}
 }
 
+func getError(code ErrorCode) (error, error) {
+	switch code {
+	case PingTimedOut:
+		return ErrPingTimedOut, nil
+	case AuthFailed:
+		return ErrAuthFailed, nil
+	}
+	return nil, ErrNoSuchError
+}
+
+func (h *Hub) disconnectClient(client *Client, code ErrorCode) error {
+	defer func(client *Client) {
+		_ = client.Conn.Close()
+	}(client)
+
+	msgErr, err := getError(code)
+	if err != nil {
+		return err
+	}
+
+	data := &ErrorData{Code: code, Message: msgErr.Error()}
+	return client.Conn.WriteJSON(data)
+}
+
 func (h *Hub) broadcast(msg interface{}) error {
 	// TODO: add subscription policy
 	for _, client := range h.Clients {
+		if time.Since(client.LastPing) > time.Second*15 {
+			h.disconnectClient(client, PingTimedOut)
+		}
+
 		if client.Identified {
 			client.Conn.WriteJSON(msg)
 		}
@@ -215,7 +257,7 @@ type UserReadyData struct {
 }
 
 var (
-	ErrInvalidData = errors.New("Invalid data")
+	ErrInvalidData = errors.New("invalid data")
 )
 
 func (h *Hub) userReady(c *Client, data interface{}) error {
