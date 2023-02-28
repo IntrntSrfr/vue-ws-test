@@ -4,19 +4,17 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+interface Props {
+    username: string
+}
 
-defineProps({
-    username: String
-})
-
+defineProps<Props>()
 </script>
 
 <style scoped>
-
 .user {
-    padding: .5em;
+    padding: 0.5em;
     font-weight: bold;
 }
-
 </style>

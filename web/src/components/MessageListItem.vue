@@ -14,7 +14,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import moment from 'moment' // consider moving to list to reduce imports?
 
 defineProps({
@@ -22,31 +22,29 @@ defineProps({
     content: String,
     timestamp: String
 })
-
 </script>
 
 <style scoped>
-.message{
+.message {
     display: flex;
     flex-direction: column;
-    padding: .5em;
+    padding: 0.5em;
 }
 
-.header{
-    display:flex;
+.header {
+    display: flex;
     flex-direction: row;
     align-items: center;
 }
 
-.author{
+.author {
     font-weight: bold;
 }
 
-.timestamp{
-    margin-left: .25em;
+.timestamp {
+    margin-left: 0.25em;
     color: rgba(235, 235, 235, 0.64);
-    font-size: .75rem;
+    font-size: 0.75rem;
     font-weight: lighter;
 }
-
 </style>

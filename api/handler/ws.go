@@ -127,7 +127,7 @@ func (h *Hub) Handler() gin.HandlerFunc {
 		defer conn.Close()
 
 		// &api.User{ID: uuid.New(), Username: username, Created: time.Now().Format(time.RFC3339)}
-		client := &Client{User: nil, Conn: conn, Identified: false}
+		client := &Client{User: nil, Conn: conn, Identified: false, LastPing: time.Now()}
 		h.Register <- client
 
 		for {

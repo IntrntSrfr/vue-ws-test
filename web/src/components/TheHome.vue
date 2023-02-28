@@ -1,28 +1,27 @@
 <template>
     <div>
         <h2>set your username</h2>
-        <AppInput :text="mainStore.username" @input="mainStore.setUsername"/>
-        <AppButton text="Go" @click="login"/>
+        <AppInput :text="mainStore.username" @input="mainStore.setUsername" />
+        <AppButton text="Go" @click="login" />
     </div>
 </template>
 
-<script setup>
-import AppInput from './AppInput.vue';
-import AppButton from './AppButton.vue';
+<script setup lang="ts">
+import AppInput from './AppInput.vue'
+import AppButton from './AppButton.vue'
 
-import {useMainStore} from '@/stores/ws'
-import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth'
+import { useSocketStore } from '@/stores/ws'
+import { useRouter } from 'vue-router'
 
-const mainStore = useMainStore()
+const authStore = useAuthStore()
+const mainStore = useSocketStore()
 const router = useRouter()
 
 const login = async () => {
     mainStore.connect()
-    await router.push('/chat');
+    await router.push('/chat')
 }
-
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

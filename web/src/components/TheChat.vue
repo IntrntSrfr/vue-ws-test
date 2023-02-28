@@ -2,47 +2,55 @@
     <div class="chat">
         <div class="messages">
             <h2>Messages</h2>
-            <MessageList :messages="mainStore.messages"/>
+            <MessageList :messages="mainStore.messages" />
             <div class="chat-input">
                 <AppInput :text="message" @input="setMessage" />
-                <AppButton text="Send" @click="mainStore.sendMessage(message)"/>
+                <AppButton text="Send" @click="mainStore.sendMessage(message)" />
             </div>
         </div>
         <div class="users">
             <h2>Users</h2>
-            <UserList :users="mainStore.users"/>
+            <UserList :users="mainStore.users" />
         </div>
     </div>
 </template>
 
-<script setup>
-import { ref } from 'vue';
-import AppButton from './AppButton.vue';
-import AppInput from './AppInput.vue';
+<script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue'
+import AppButton from './AppButton.vue'
+import AppInput from './AppInput.vue'
 import MessageList from './MessageList.vue'
 import UserList from './UserList.vue'
 
-import { useMainStore } from '../stores/ws';
+import { useSocketStore } from '../stores/ws'
 
-const mainStore = useMainStore()
+const mainStore = useSocketStore()
 
-const message = ref('')
-const setMessage = (newMsg) => {
+onMounted(() => {
+    mainStore.connect()
+})
+
+onUnmounted(() => {
+    // not really sure if this is what i want?
+    mainStore.disconnect()
+})
+
+const message = ref<string>('')
+const setMessage = (newMsg: string) => {
     message.value = newMsg
 }
-
 </script>
 
 <style scoped>
-
-.chat{
+.chat {
     height: 100%;
     display: flex;
     flex-direction: row;
     gap: 1em;
 }
 
-.messages, .users {
+.messages,
+.users {
     border: 1px solid rgb(184, 184, 184);
 }
 
@@ -52,7 +60,7 @@ const setMessage = (newMsg) => {
     flex-direction: column;
 }
 
-.chat-input{
+.chat-input {
     background-color: var(--color-background-soft);
 }
 
@@ -63,10 +71,8 @@ const setMessage = (newMsg) => {
 }
 
 h2 {
-    padding: .5em 1em;
+    padding: 0.5em 1em;
     background-color: var(--color-background-soft);
     font-weight: bold;
 }
-
-
 </style>
