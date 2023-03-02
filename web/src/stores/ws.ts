@@ -160,7 +160,6 @@ export const useSocketStore = defineStore('socket', () => {
     }
 
     const handleError = (data: ErrorData) => {
-        console.log(data);
         authStore.logout()
         disconnect()
     }

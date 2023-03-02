@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ButtonHTMLAttributes } from 'vue';
+import type { ButtonHTMLAttributes } from 'vue'
 
 interface Props {
     text: string

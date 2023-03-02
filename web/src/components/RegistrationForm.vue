@@ -1,5 +1,5 @@
 <template>
-    <form class="form" @submit.prevent="submit" >
+    <form class="form" @submit.prevent="submit">
         <div class="form-fields">
             <div class="form-field" v-for="(field, i) in fields" :key="i">
                 <div class="field-title">{{ field.title }}</div>
