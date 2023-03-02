@@ -20,22 +20,22 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref} from 'vue'
+import { computed, ref } from 'vue'
 import AppButton from './AppButton.vue'
 import MessageList from './MessageList.vue'
 import UserList from './UserList.vue'
 
 import { useSocketStore } from '@/stores/ws'
-import http from "@/http";
-import type {Message} from "@/types";
-import {useAuthStore} from "@/stores/auth";
+import http from '@/http'
+import type { Message } from '@/types'
+import { useAuthStore } from '@/stores/auth'
 
 const socketStore = useSocketStore()
 const authStore = useAuthStore()
 
 const chatBoxRef = ref<HTMLInputElement | null>(null)
 const focusInput = () => {
-    if(!chatBoxRef.value) return;
+    if (!chatBoxRef.value) return
     chatBoxRef.value.focus()
 }
 
@@ -47,15 +47,18 @@ const validMessage = computed(() => {
 
 const sendMessage = () => {
     const token = authStore.token
-    if(!validMessage) return;
+    if (!validMessage) return
     const tmpMsg = message.value.trim()
     message.value = ''
 
-    http.post<Message>('/messages/', {content: tmpMsg}, {headers: {'Authorization': `Bearer ${token}`}})
-        .then(resp => console.log(resp.data))
-        .catch(err => console.log(err))
+    http.post<Message>(
+        '/messages/',
+        { content: tmpMsg },
+        { headers: { Authorization: `Bearer ${token}` } }
+    )
+        .then((resp) => console.log(resp.data))
+        .catch((err) => console.log(err))
 }
-
 </script>
 
 <style scoped>
@@ -84,7 +87,7 @@ const sendMessage = () => {
     background-color: var(--color-background-soft);
 }
 
-.chat-input-inner{
+.chat-input-inner {
     flex-grow: 1;
     cursor: text;
 }
@@ -94,7 +97,7 @@ const sendMessage = () => {
     height: 100%;
 
     resize: none;
-    padding:  0.5em;
+    padding: 0.5em;
 
     background-color: transparent;
     border: none;

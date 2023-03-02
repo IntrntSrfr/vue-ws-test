@@ -1,5 +1,5 @@
 <template>
-    <button class="btn" :disabled="!!inactive" >
+    <button class="btn" :disabled="!!inactive">
         {{ text }}
     </button>
 </template>
@@ -31,7 +31,7 @@ defineProps<Props>()
     background-color: rgb(0, 33, 66);
 }
 
-.btn:disabled{
+.btn:disabled {
     filter: grayscale(100%);
 }
 </style>

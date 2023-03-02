@@ -63,7 +63,7 @@ interface SocketState {
     users: User[]
 }
 
-const defaultState = (): SocketState =>({messages: [], users: []})
+const defaultState = (): SocketState => ({ messages: [], users: [] })
 
 export const useSocketStore = defineStore('socket', () => {
     const authStore = useAuthStore()
@@ -79,11 +79,13 @@ export const useSocketStore = defineStore('socket', () => {
         const ws = new WebSocket(`ws://localhost:7070/ws`)
 
         ws.onopen = () => {
-            ws.send(JSON.stringify({
-                op: OpCode.Identify,
-                data: {token: authStore.token},
-                action: ActionCode.None
-            } as SocketEvent))
+            ws.send(
+                JSON.stringify({
+                    op: OpCode.Identify,
+                    data: { token: authStore.token },
+                    action: ActionCode.None
+                } as SocketEvent)
+            )
 
             pingInterval.value = setInterval(() => {
                 console.log('weed')

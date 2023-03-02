@@ -13,7 +13,7 @@ import RegistrationForm from '../components/RegistrationForm.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { AxiosError } from 'axios'
-import {useSocketStore} from "@/stores/ws";
+import { useSocketStore } from '@/stores/ws'
 
 const socketStore = useSocketStore()
 const authStore = useAuthStore()
@@ -29,7 +29,7 @@ const onRegister = ({ username, password, password2 }: RegisterFormEmit) => {
     authStore
         .register(username, password)
         .then(() => {
-            socketStore.connect();
+            socketStore.connect()
             router.push('/chat')
         })
         .catch((err: AxiosError) => console.log(err.response?.data))
@@ -39,7 +39,7 @@ const onLogin = ({ username, password }: LoginFormEmit) => {
     authStore
         .login(username, password)
         .then(() => {
-            socketStore.connect();
+            socketStore.connect()
             router.push('/chat')
         })
         .catch((err: AxiosError) => console.log(err.response?.data))
