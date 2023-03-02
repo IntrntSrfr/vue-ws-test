@@ -2,6 +2,7 @@ import { useStorage } from '@vueuse/core'
 import jwtDecode from 'jwt-decode'
 import { defineStore } from 'pinia'
 import { computed, reactive } from 'vue'
+import http from '@/http'
 
 interface AuthState {
     id: string
@@ -11,27 +12,69 @@ interface AuthState {
 
 const defaultState = (): AuthState => ({ id: '', username: '', loggedIn: false })
 
-//localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMzQ1Njc4OTAiLCJ1c2VybmFtZSI6ImFsZXgiLCJleHAiOjE2Nzc1NTI3OTZ9.b2FzaP-7X8zUtrpYJUBpcS4P6zQxHFjmCUCw8_V-L6M')
+//localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyMzQ1Njc4OTAiLCJ1c2VybmFtZSI6ImFsZXgiLCJleHAiOjE2Nzc2NTI3OTZ9.B6KzOK22D7dYJBOzjDTDfopGBjm-agwrQsl7Nfl7bhE')
 
-export const useAuthStore = defineStore('auth', () => {
-    const state = reactive<AuthState>(defaultState())
-    const token = useStorage('token', '')
-    if (!token.value) {
-        token.value = null
-        return
-    }
+interface AuthResponse {
+    token: string
+}
 
-    const decoded: { exp: number; id: string; username: string } = jwtDecode(token.value)
-    if (decoded.exp < Date.now() / 1000) {
-        token.value = null
-        return
-    }
+export const useAuthStore = () => {
+    const store = defineStore('auth', () => {
+        const state = reactive<AuthState>(defaultState())
+        const token = useStorage<string>('token', '')
 
-    state.id = decoded.id
-    state.username = decoded.username
-    state.loggedIn = true
+        const initialize = () => {
+            if (!token.value) {
+                token.value = null
+                return
+            }
+            decodeToken()
+        }
 
-    const loggedIn = computed(() => state.loggedIn)
+        const decodeToken = () => {
+            const decoded: { exp: number; sub: string; username: string } = jwtDecode(token.value)
+            if (decoded.exp < Date.now() / 1000) {
+                token.value = ''
+                return
+            }
 
-    return { state, token, loggedIn }
-})
+            state.id = decoded.sub
+            state.username = decoded.username
+            state.loggedIn = true
+        }
+
+        const logout = () => {
+            Object.assign(state, defaultState())
+        }
+
+        const login = async (username: string, password: string) => {
+            try {
+                const res = await http.post<AuthResponse>('/auth/login', { username, password })
+                token.value = res.data.token
+                decodeToken()
+                return null
+            } catch (error) {
+                throw error
+            }
+        }
+
+        const register = async (username: string, password: string) => {
+            try {
+                const res = await http.post<AuthResponse>('/auth/register', { username, password })
+                token.value = res.data.token
+                decodeToken()
+                return null
+            } catch (error) {
+                throw error
+            }
+        }
+
+        const loggedIn = computed(() => state.loggedIn)
+
+        return { initialize, state, token, loggedIn, login, logout, register }
+    })
+
+    const s = store()
+    s.initialize()
+    return store()
+}

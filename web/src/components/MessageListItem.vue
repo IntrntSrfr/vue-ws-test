@@ -17,11 +17,11 @@
 <script setup lang="ts">
 import moment from 'moment' // consider moving to list to reduce imports?
 
-defineProps({
-    author: String,
-    content: String,
-    timestamp: String
-})
+defineProps<{
+    author: string
+    timestamp: Date
+    content: string
+}>()
 </script>
 
 <style scoped>

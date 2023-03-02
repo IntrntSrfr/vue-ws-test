@@ -3,9 +3,9 @@
         <MessageListItem
             v-for="(msg, i) in messages"
             :key="i"
-            :author="msg.username"
-            :content="msg.text"
-            :timestamp="msg.timestamp"
+            :author="msg.author.username"
+            :content="msg.content"
+            :timestamp="new Date(msg.timestamp)"
         />
     </div>
 </template>
@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import type { Message } from '@/types'
 import { ref, watch } from 'vue'
-import { useSocketStore } from '../stores/ws'
+import { useSocketStore } from '@/stores/ws'
 import MessageListItem from './MessageListItem.vue'
 
 const mainStore = useSocketStore()
@@ -26,17 +26,16 @@ interface Props {
 defineProps<Props>()
 
 const scrollBottom = () => {
-    setTimeout(() => {
-        if (!listRef.value) return
-        listRef.value.scroll({ top: listRef.value.scrollHeight + 100, behavior: 'smooth' })
-        //listRef.value.scroll(0, listRef.value.scrollHeight+100)
-    }, 10)
+    if (!listRef.value) return
+    listRef.value.scroll({ top: listRef.value.scrollHeight + 100, behavior: 'smooth' })
 }
 
 watch(
     () => mainStore.messages,
     (n, o) => {
-        scrollBottom()
+        setTimeout(() => {
+            scrollBottom()
+        }, 10)
     }
 )
 

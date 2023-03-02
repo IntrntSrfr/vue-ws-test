@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/intrntsrfr/vue-ws-test"
 	"github.com/intrntsrfr/vue-ws-test/database"
+	"github.com/intrntsrfr/vue-ws-test/structs"
 	"net/http"
 	"strings"
 	"time"
@@ -54,19 +54,17 @@ func (h *MessageHandler) postMessage() gin.HandlerFunc {
 		}
 		user.Password = ""
 
-		msg, _ := h.db.CreateMessage(&api.Message{
+		msg, _ := h.db.CreateMessage(&structs.Message{
 			ID:        uuid.New(),
 			Author:    user,
-			Content:   postMessageBody.Content,
-			Timestamp: time.Now().Format(time.RFC3339),
-			Reactions: []*api.Reaction{},
+			Content:   strings.TrimSpace(postMessageBody.Content),
+			Timestamp: time.Now(),
+			Reactions: []*structs.Reaction{},
 		})
-
-		fmt.Println(msg)
 
 		c.JSON(http.StatusOK, msg)
 		//h.ws.userMessage(msg)
-		h.ws.dispatchEvent(UserMessage, nil, msg)
+		_ = h.ws.dispatchEvent(ActionUserMessage, nil, msg)
 	}
 }
 

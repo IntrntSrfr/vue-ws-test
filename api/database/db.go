@@ -1,16 +1,16 @@
 package database
 
 import (
-	"github.com/intrntsrfr/vue-ws-test"
+	"github.com/intrntsrfr/vue-ws-test/structs"
 )
 
 type DB interface {
-	CreateUser(u *api.User) (*api.User, error)
-	FindUserByID(id string) *api.User
-	FindUserByUsername(username string) *api.User
+	CreateUser(u *structs.User) (*structs.User, error)
+	FindUserByID(id string) *structs.User
+	FindUserByUsername(username string) *structs.User
 
-	CreateMessage(m *api.Message) (*api.Message, error)
-	GetMessages() []*api.Message
+	CreateMessage(message *structs.Message) (*structs.Message, error)
+	GetRecentMessages(limit int) []*structs.Message
 
 	CreateReaction(messageID string, emoji rune) error
 	DeleteReaction(messageID string, emoji rune) error

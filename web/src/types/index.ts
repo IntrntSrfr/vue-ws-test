@@ -1,12 +1,14 @@
 export interface User {
     id: string
     username: string
+    created: Date
 }
 
 export interface Message {
-    text: string
-    username: string
-    timestamp: string
+    id: string
+    content: string
+    author: User
+    timestamp: Date
 }
 
 export interface RegisterFormEmit {

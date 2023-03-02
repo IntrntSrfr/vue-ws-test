@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	api "github.com/intrntsrfr/vue-ws-test"
+	"github.com/intrntsrfr/vue-ws-test/structs"
 	"net/http"
 	"time"
 
-	api "github.com/intrntsrfr/vue-ws-test"
 	"github.com/intrntsrfr/vue-ws-test/database"
 
 	"github.com/gin-gonic/gin"
@@ -26,10 +28,11 @@ const (
 type ActionCode int
 
 const (
-	UserReady ActionCode = iota
-	UserJoin
-	UserLeave
-	UserMessage
+	ActionNone ActionCode = iota
+	ActionUserReady
+	ActionUserJoin
+	ActionUserLeave
+	ActionUserMessage
 )
 
 type WSEvent struct {
@@ -39,15 +42,15 @@ type WSEvent struct {
 
 // Event represents data send over the websocket
 type Event struct {
-	Op   OpCode      `json:"op"`
-	Data interface{} `json:"data"`
+	Operation OpCode          `json:"op"`
+	RawData   json.RawMessage `json:"data"`
+	Action    ActionCode      `json:"action"`
 }
 
-func NewEvent(op OpCode, data interface{}) *Event {
-	return &Event{
-		Op:   op,
-		Data: data,
-	}
+type sendEvent struct {
+	Operation OpCode      `json:"op"`
+	Data      interface{} `json:"data"`
+	Action    ActionCode  `json:"action"`
 }
 
 type IdentifyData struct {
@@ -74,6 +77,7 @@ const (
 var (
 	ErrUnknownError = errors.New("unknown error")
 	ErrPingTimedOut = errors.New("no ping for too long")
+	ErrInvalidData  = errors.New("invalid data")
 	ErrAuthFailed   = errors.New("authentication failed")
 )
 
@@ -81,7 +85,7 @@ var ErrNoSuchError = errors.New("no such error")
 
 // Client represents a connected websocket client
 type Client struct {
-	User       *api.User
+	User       *structs.User
 	Conn       *websocket.Conn
 	Identified bool
 	LastPing   time.Time
@@ -90,22 +94,24 @@ type Client struct {
 // Hub maintains a list of connected clients and broadcasts messages to them
 type Hub struct {
 	Clients    []*Client
-	Messages   []*api.Message
+	Messages   []*structs.Message
 	EventCh    chan *WSEvent
 	Register   chan *Client
 	Unregister chan *Client
 	db         database.DB
+	jwt        api.JWTService
 }
 
 // NewHub returns a default Hub
-func NewHub(db database.DB) *Hub {
+func NewHub(db database.DB, jwt api.JWTService) *Hub {
 	hub := &Hub{
 		Clients:    []*Client{},
-		Messages:   []*api.Message{},
+		Messages:   []*structs.Message{},
 		EventCh:    make(chan *WSEvent),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 		db:         db,
+		jwt:        jwt,
 	}
 	return hub
 }
@@ -126,18 +132,22 @@ func (h *Hub) Handler() gin.HandlerFunc {
 		}
 		defer conn.Close()
 
-		// &api.User{ID: uuid.New(), Username: username, Created: time.Now().Format(time.RFC3339)}
+		// &structs.User{ID: uuid.New(), Username: username, Created: time.Now().Format(time.RFC3339)}
 		client := &Client{User: nil, Conn: conn, Identified: false, LastPing: time.Now()}
 		h.Register <- client
 
 		for {
-			var evt WSEvent
+			var evt Event
 			err := conn.ReadJSON(&evt)
 			if err != nil {
 				fmt.Println(err)
 				break
 			}
-			h.EventCh <- &evt
+
+			h.EventCh <- &WSEvent{
+				Client: client,
+				Event:  &evt,
+			}
 		}
 
 		h.Unregister <- client
@@ -157,24 +167,50 @@ func (h *Hub) listenEvents() {
 			h.registerClient(client)
 		case client := <-h.Unregister:
 			h.removeClient(client)
-			h.userLeave(nil, client.User)
 		case evt := <-h.EventCh:
-			if evt.Event.Op == Identify {
-				if e, ok := evt.Event.Data.(*IdentifyData); ok {
-					h.identifyClient(evt.Client, e)
-				}
-			} else if evt.Event.Op == Ping {
-				if e, ok := evt.Event.Data.(*PingData); ok {
-					h.handlePing(evt.Client, e)
-				}
-			}
+			h.onEvent(evt)
 		}
 	}
 }
 
+func (h *Hub) onEvent(evt *WSEvent) {
+	switch evt.Event.Operation {
+	case Identify:
+		data := IdentifyData{}
+		if err := json.Unmarshal(evt.Event.RawData, &data); err != nil {
+			return
+		}
+		h.identifyClient(evt.Client, &data)
+	case Ping:
+		data := PingData{}
+		if err := json.Unmarshal(evt.Event.RawData, &data); err != nil {
+			return
+		}
+		h.handlePing(evt.Client, &data)
+	}
+}
+
 func (h *Hub) identifyClient(client *Client, evt *IdentifyData) {
-	// check JWT and check againt database
-	// if good, set as identified, otherwise h.disconnectClient(client, AuthFailed)
+	token, err := h.jwt.ParseToken(evt.Token)
+	if err != nil {
+		_ = h.disconnectClient(client, AuthFailed)
+		return
+	}
+	claims, ok := token.(*api.UserClaims)
+	if !ok {
+		_ = h.disconnectClient(client, AuthFailed)
+		return
+	}
+
+	user := h.db.FindUserByID(claims.Subject)
+	if user == nil {
+		_ = h.disconnectClient(client, AuthFailed)
+		return
+	}
+
+	client.Identified = true
+	client.User = user
+	_ = h.dispatchEvent(ActionUserReady, client, nil)
 }
 
 func (h *Hub) handlePing(client *Client, evt *PingData) {
@@ -184,18 +220,24 @@ func (h *Hub) handlePing(client *Client, evt *PingData) {
 type DispatchEvent func(conn *Client, data interface{}) error
 
 func (h *Hub) dispatchEvent(ac ActionCode, conn *Client, data interface{}) error {
+	fmt.Println("dispatching event, code:", ac)
+
 	var dpe DispatchEvent
 	switch ac {
-	case UserReady:
+	case ActionUserReady:
 		dpe = h.userReady
-	case UserJoin:
+	case ActionUserJoin:
 		dpe = h.userJoin
-	case UserLeave:
+	case ActionUserLeave:
 		dpe = h.userLeave
-	case UserMessage:
+	case ActionUserMessage:
 		dpe = h.userMessage
 	}
-	return dpe(conn, data)
+	err := dpe(conn, data)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return err
 }
 
 func (h *Hub) registerClient(client *Client) {
@@ -209,6 +251,7 @@ func (h *Hub) removeClient(client *Client) {
 			break
 		}
 	}
+	h.dispatchEvent(ActionUserLeave, nil, client.User)
 }
 
 func getError(code ErrorCode) (error, error) {
@@ -238,107 +281,75 @@ func (h *Hub) disconnectClient(client *Client, code ErrorCode) error {
 func (h *Hub) broadcast(msg interface{}) error {
 	// TODO: add subscription policy
 	for _, client := range h.Clients {
-		if time.Since(client.LastPing) > time.Second*15 {
-			h.disconnectClient(client, PingTimedOut)
-		}
-
+		/*
+			if time.Since(client.LastPing) > time.Second*15 {
+				h.disconnectClient(client, PingTimedOut)
+			}
+		*/
 		if client.Identified {
-			client.Conn.WriteJSON(msg)
+			_ = client.Conn.WriteJSON(msg)
 		}
 	}
 	return nil
 }
 
-// UserReadyData is data that is sent to the user when the server has loaded their data
-type UserReadyData struct {
-	Code     ActionCode
-	Messages []*api.Message `json:"messages"`
-	Users    []*api.User    `json:"users"`
-}
-
-var (
-	ErrInvalidData = errors.New("invalid data")
-)
-
-func (h *Hub) userReady(c *Client, data interface{}) error {
-	/*
-		msgs := h.Messages[len(h.Messages)-util.Min(len(h.Messages), 50):]
-		users := []*api.User{}
-		for _, client := range h.Clients {
-			if client.Identified {
-				users = append(users, client.User)
-			}
+func (h *Hub) userReady(c *Client, _ interface{}) error {
+	msgs := h.db.GetRecentMessages(50)
+	users := make([]*structs.User, 0)
+	for _, client := range h.Clients {
+		if client.Identified && client != c {
+			users = append(users, client.User)
 		}
-	*/
-	// send all clients and last 50 messages
-	// some opcode
-	// after this let everyone else know the user joined
-	//c.Conn.WriteJSON()
+	}
 
-	d, ok := data.(*UserReadyData)
+	data := &sendEvent{
+		Operation: Action,
+		Data:      &structs.UserReady{msgs, users},
+		Action:    ActionUserReady,
+	}
+	_ = c.Conn.WriteJSON(data)
+	_ = h.dispatchEvent(ActionUserJoin, nil, c.User)
+	return nil
+}
+
+func (h *Hub) userJoin(_ *Client, data interface{}) error {
+	d, ok := data.(*structs.User)
 	if !ok {
 		return ErrInvalidData
 	}
 
-	d2 := Event{
-		Op:   Action,
-		Data: d,
-	}
-	return c.Conn.WriteJSON(d2)
-}
-
-// UserJoinData is the data to be sent when a user joins
-type UserJoinData struct {
-	Code ActionCode
-	User *api.User `json:"user"`
-}
-
-func (h *Hub) userJoin(conn *Client, data interface{}) error {
-	d, ok := data.(*UserJoinData)
-	if !ok {
-		return ErrInvalidData
-	}
-
-	d2 := Event{
-		Op:   Action,
-		Data: d,
+	d2 := &sendEvent{
+		Operation: Action,
+		Data:      &structs.UserJoin{d},
+		Action:    ActionUserJoin,
 	}
 	return h.broadcast(d2)
 }
 
-// UserLeaveData is the data to be sent when a user leaves
-type UserLeaveData struct {
-	Code ActionCode
-	User *api.User `json:"user"`
-}
-
-func (h *Hub) userLeave(conn *Client, data interface{}) error {
-	d, ok := data.(*UserLeaveData)
+func (h *Hub) userLeave(_ *Client, data interface{}) error {
+	d, ok := data.(*structs.User)
 	if !ok {
 		return ErrInvalidData
 	}
 
-	d2 := Event{
-		Op:   Action,
-		Data: d,
+	d2 := &sendEvent{
+		Operation: Action,
+		Data:      &structs.UserLeave{d},
+		Action:    ActionUserLeave,
 	}
 	return h.broadcast(d2)
 }
 
-// UserMessageData is the data to be sent when a user sends a message
-type UserMessageData struct {
-	Message *api.Message `json:"message"`
-}
-
-func (h *Hub) userMessage(conn *Client, data interface{}) error {
-	d, ok := data.(*UserMessageData)
+func (h *Hub) userMessage(_ *Client, data interface{}) error {
+	d, ok := data.(*structs.Message)
 	if !ok {
 		return ErrInvalidData
 	}
 
-	d2 := Event{
-		Op:   Action,
-		Data: d,
+	d2 := &sendEvent{
+		Operation: Action,
+		Data:      &structs.UserMessage{d},
+		Action:    ActionUserMessage,
 	}
 	return h.broadcast(d2)
 }

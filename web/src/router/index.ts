@@ -36,11 +36,6 @@ router.beforeEach((to, from) => {
     if (to.name !== 'chat' && authStore.loggedIn) {
         return { path: '/chat' }
     }
-    /* 
-    if(to.name === 'chat' && !authStore.loggedIn) {
-        return {path: '/auth'}
-    }
-     */
 })
 
 export default router

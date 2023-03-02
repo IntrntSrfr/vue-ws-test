@@ -10,6 +10,14 @@ import { ref, computed } from 'vue'
 import AppButton from '../components/AppButton.vue'
 import LoginForm from '../components/LoginForm.vue'
 import RegistrationForm from '../components/RegistrationForm.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
+import { AxiosError } from 'axios'
+import {useSocketStore} from "@/stores/ws";
+
+const socketStore = useSocketStore()
+const authStore = useAuthStore()
+const router = useRouter()
 
 const showRegistration = ref(false)
 const buttonText = computed(() => {
@@ -17,11 +25,24 @@ const buttonText = computed(() => {
 })
 
 const onRegister = ({ username, password, password2 }: RegisterFormEmit) => {
-    console.log(username, password, password2)
+    if (password !== password2) return
+    authStore
+        .register(username, password)
+        .then(() => {
+            socketStore.connect();
+            router.push('/chat')
+        })
+        .catch((err: AxiosError) => console.log(err.response?.data))
 }
 
 const onLogin = ({ username, password }: LoginFormEmit) => {
-    console.log(username, password)
+    authStore
+        .login(username, password)
+        .then(() => {
+            socketStore.connect();
+            router.push('/chat')
+        })
+        .catch((err: AxiosError) => console.log(err.response?.data))
 }
 </script>
 

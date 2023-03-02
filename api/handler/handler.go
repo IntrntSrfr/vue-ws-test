@@ -41,7 +41,7 @@ type Config struct {
 func NewHandler(conf *Config) *Handler {
 	h := &Handler{
 		gin.Default(),
-		NewHub(conf.DB),
+		NewHub(conf.DB, conf.JwtUtil),
 		conf.DB,
 	}
 
@@ -84,7 +84,7 @@ func Cors() gin.HandlerFunc {
 	return cors.New(cors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "OPTIONS", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Authorization"},
+		AllowHeaders:     []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	})

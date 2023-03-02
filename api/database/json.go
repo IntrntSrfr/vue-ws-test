@@ -3,10 +3,10 @@ package database
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/intrntsrfr/vue-ws-test/structs"
 	"os"
+	"sort"
 	"sync"
-
-	api "github.com/intrntsrfr/vue-ws-test"
 )
 
 type JsonDB struct {
@@ -16,19 +16,25 @@ type JsonDB struct {
 
 type state struct {
 	sync.Mutex
-	Users    []*api.User    `json:"users"`
-	Messages []*api.Message `json:"messages"`
+	Users    map[string]*structs.User    `json:"users"`
+	Messages map[string]*structs.Message `json:"messages"`
 }
 
 func Open(path string) (*JsonDB, error) {
-	db := &JsonDB{
+	var (
+		db  *JsonDB
+		err error
+	)
+	db = &JsonDB{
 		path: path,
 		state: &state{
-			Users:    make([]*api.User, 0),
-			Messages: make([]*api.Message, 0),
+			Users:    make(map[string]*structs.User, 0),
+			Messages: make(map[string]*structs.Message, 0),
 		},
 	}
-	err := db.load(path)
+	if path != "" {
+		err = db.load(path)
+	}
 	return db, err
 }
 
@@ -74,25 +80,20 @@ func (j *JsonDB) save() error {
 	return err
 }
 
-func (j *JsonDB) CreateUser(u *api.User) (*api.User, error) {
+func (j *JsonDB) CreateUser(u *structs.User) (*structs.User, error) {
 	j.state.Lock()
 	defer j.state.Unlock()
-	j.state.Users = append(j.state.Users, u)
+	j.state.Users[u.ID.String()] = u
 	return u, nil
 }
 
-func (j *JsonDB) FindUserByID(id string) *api.User {
+func (j *JsonDB) FindUserByID(id string) *structs.User {
 	j.state.Lock()
 	defer j.state.Unlock()
-	for _, u := range j.state.Users {
-		if u.ID.String() == id {
-			return u
-		}
-	}
-	return nil
+	return j.state.Users[id]
 }
 
-func (j *JsonDB) FindUserByUsername(username string) *api.User {
+func (j *JsonDB) FindUserByUsername(username string) *structs.User {
 	j.state.Lock()
 	defer j.state.Unlock()
 	for _, u := range j.state.Users {
@@ -101,4 +102,41 @@ func (j *JsonDB) FindUserByUsername(username string) *api.User {
 		}
 	}
 	return nil
+}
+
+func (j *JsonDB) CreateMessage(message *structs.Message) (*structs.Message, error) {
+	j.state.Lock()
+	defer j.state.Unlock()
+	j.state.Messages[message.ID.String()] = message
+	return message, nil
+}
+
+func (j *JsonDB) GetRecentMessages(limit int) []*structs.Message {
+	j.state.Lock()
+	defer j.state.Unlock()
+
+	var messages []*structs.Message
+	for _, msg := range j.state.Messages {
+		messages = append(messages, msg)
+	}
+	sort.Sort(structs.ByTime{Messages: messages})
+
+	var recent []*structs.Message
+	for i, msg := range messages {
+		if i >= limit {
+			break
+		}
+		recent = append(recent, msg)
+	}
+	return recent
+}
+
+func (j *JsonDB) CreateReaction(messageID string, emoji rune) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (j *JsonDB) DeleteReaction(messageID string, emoji rune) error {
+	//TODO implement me
+	panic("implement me")
 }

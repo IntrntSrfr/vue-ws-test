@@ -44,7 +44,7 @@ func main() {
 
 	// run server
 	// this will block
-	err = h.Run(":8080")
+	err = h.Run(":7070")
 	if err != nil {
 		fmt.Println(err)
 	}

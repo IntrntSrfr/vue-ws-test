@@ -2,7 +2,7 @@ package api
 
 import (
 	"errors"
-	"fmt"
+	"github.com/intrntsrfr/vue-ws-test/structs"
 	"net/http"
 	"strings"
 	"time"
@@ -13,7 +13,7 @@ import (
 
 type JWTService interface {
 	ParseToken(token string) (jwt.Claims, error)
-	GenerateToken(user *User) (string, error)
+	GenerateToken(user *structs.User) (string, error)
 	IsAuthorized() gin.HandlerFunc
 }
 
@@ -27,7 +27,7 @@ func NewJWTUtil(key []byte) *JWTUtil {
 
 type UserClaims struct {
 	jwt.RegisteredClaims
-	Username string
+	Username string `json:"username"`
 }
 
 func (j *JWTUtil) ParseToken(tokenStr string) (jwt.Claims, error) {
@@ -45,7 +45,7 @@ func (j *JWTUtil) ParseToken(tokenStr string) (jwt.Claims, error) {
 	return token.Claims, nil
 }
 
-func (j *JWTUtil) GenerateToken(user *User) (string, error) {
+func (j *JWTUtil) GenerateToken(user *structs.User) (string, error) {
 	tkn := jwt.New(jwt.SigningMethodHS256)
 	claims := UserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -73,7 +73,6 @@ func (j *JWTUtil) IsAuthorized() gin.HandlerFunc {
 			return j.key, nil
 		})
 		if err != nil {
-			fmt.Println(err)
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "mangled token"})
 			return
 		}

@@ -1,11 +1,13 @@
 package handler
 
 import (
-	"github.com/google/uuid"
-	"github.com/intrntsrfr/vue-ws-test"
-	"github.com/intrntsrfr/vue-ws-test/database"
+	"github.com/intrntsrfr/vue-ws-test/structs"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
+	api "github.com/intrntsrfr/vue-ws-test"
+	"github.com/intrntsrfr/vue-ws-test/database"
 
 	"github.com/gin-gonic/gin"
 )
@@ -74,12 +76,16 @@ func (h *AuthHandler) register() gin.HandlerFunc {
 			return
 		}
 
-		user, err := h.db.CreateUser(&api.User{
+		user, err := h.db.CreateUser(&structs.User{
 			ID:       uuid.New(),
 			Username: registerBody.Username,
 			Password: registerBody.Password,
-			Created:  time.Now().Format(time.RFC3339),
+			Created:  time.Now(),
 		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, ErrorResponse{CodeError, "internal server error"})
+			return
+		}
 
 		token, err := h.jwt.GenerateToken(user)
 		if err != nil {
