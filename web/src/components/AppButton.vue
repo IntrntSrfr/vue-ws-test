@@ -1,13 +1,16 @@
 <template>
-    <button class="btn" :disabled="!!inactive">
+    <button class="btn" :type="type" :disabled="!!inactive">
         {{ text }}
     </button>
 </template>
 
 <script setup lang="ts">
+import type { ButtonHTMLAttributes } from 'vue';
+
 interface Props {
     text: string
     inactive?: boolean
+    type?: ButtonHTMLAttributes['type']
 }
 
 defineProps<Props>()
@@ -32,6 +35,9 @@ defineProps<Props>()
 }
 
 .btn:disabled {
+    background-color: inherit;
+    border-color: inherit;
+    cursor: not-allowed;
     filter: grayscale(100%);
 }
 </style>

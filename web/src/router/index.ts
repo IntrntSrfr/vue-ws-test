@@ -26,7 +26,7 @@ const router = createRouter({
     ]
 })
 
-router.beforeEach((to, from) => {
+router.beforeEach((to) => {
     const authStore = useAuthStore()
     console.log(authStore.loggedIn)
 

@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	api "github.com/intrntsrfr/vue-ws-test"
-	"github.com/intrntsrfr/vue-ws-test/structs"
 	"net/http"
 	"time"
+
+	api "github.com/intrntsrfr/vue-ws-test"
+	"github.com/intrntsrfr/vue-ws-test/structs"
 
 	"github.com/intrntsrfr/vue-ws-test/database"
 
@@ -207,9 +208,11 @@ func (h *Hub) identifyClient(client *Client, evt *IdentifyData) {
 		_ = h.disconnectClient(client, AuthFailed)
 		return
 	}
+	userCopy := *user
+	userCopy.Password = ""
 
 	client.Identified = true
-	client.User = user
+	client.User = &userCopy
 	_ = h.dispatchEvent(ActionUserReady, client, nil)
 }
 
@@ -274,7 +277,12 @@ func (h *Hub) disconnectClient(client *Client, code ErrorCode) error {
 		return err
 	}
 
-	data := &ErrorData{Code: code, Message: msgErr.Error()}
+	data := &sendEvent{
+		Operation: Error,
+		Data:      &ErrorData{Code: code, Message: msgErr.Error()},
+		Action:    ActionNone,
+	}
+
 	return client.Conn.WriteJSON(data)
 }
 

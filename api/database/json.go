@@ -3,10 +3,11 @@ package database
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/intrntsrfr/vue-ws-test/structs"
 	"os"
 	"sort"
 	"sync"
+
+	"github.com/intrntsrfr/vue-ws-test/structs"
 )
 
 type JsonDB struct {
@@ -121,7 +122,7 @@ func (j *JsonDB) GetRecentMessages(limit int) []*structs.Message {
 	}
 	sort.Sort(structs.ByTime{Messages: messages})
 
-	var recent []*structs.Message
+	recent := make([]*structs.Message, 0)
 	for i, msg := range messages {
 		if i >= limit {
 			break

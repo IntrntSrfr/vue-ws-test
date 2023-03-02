@@ -12,7 +12,7 @@ import LoginForm from '../components/LoginForm.vue'
 import RegistrationForm from '../components/RegistrationForm.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
-import { AxiosError } from 'axios'
+import type { AxiosError } from 'axios'
 import { useSocketStore } from '@/stores/ws'
 
 const socketStore = useSocketStore()

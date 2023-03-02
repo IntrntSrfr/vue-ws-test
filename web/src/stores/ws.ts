@@ -114,6 +114,9 @@ export const useSocketStore = defineStore('socket', () => {
             case OpCode.Action:
                 handleAction(evt.action, evt.data as ActionEvent)
                 break
+            case OpCode.Error:
+                handleError(evt.data as ErrorData)
+                break
 
             default:
                 break
@@ -154,6 +157,12 @@ export const useSocketStore = defineStore('socket', () => {
 
     const handleUserMessage = (evt: UserMessageData) => {
         state.messages = [...state.messages, evt.message as Message]
+    }
+
+    const handleError = (data: ErrorData) => {
+        console.log(data);
+        authStore.logout()
+        disconnect()
     }
 
     const disconnect = () => {

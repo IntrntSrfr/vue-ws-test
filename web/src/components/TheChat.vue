@@ -47,7 +47,7 @@ const validMessage = computed(() => {
 
 const sendMessage = () => {
     const token = authStore.token
-    if (!validMessage) return
+    if (!validMessage.value) return
     const tmpMsg = message.value.trim()
     message.value = ''
 

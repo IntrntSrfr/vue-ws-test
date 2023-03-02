@@ -45,28 +45,19 @@ export const useAuthStore = () => {
 
         const logout = () => {
             Object.assign(state, defaultState())
+            token.value = null
         }
 
         const login = async (username: string, password: string) => {
-            try {
-                const res = await http.post<AuthResponse>('/auth/login', { username, password })
-                token.value = res.data.token
-                decodeToken()
-                return null
-            } catch (error) {
-                throw error
-            }
+            const res = await http.post<AuthResponse>('/auth/login', { username, password })
+            token.value = res.data.token
+            decodeToken()
         }
 
         const register = async (username: string, password: string) => {
-            try {
-                const res = await http.post<AuthResponse>('/auth/register', { username, password })
-                token.value = res.data.token
-                decodeToken()
-                return null
-            } catch (error) {
-                throw error
-            }
+            const res = await http.post<AuthResponse>('/auth/register', { username, password })
+            token.value = res.data.token
+            decodeToken()
         }
 
         const loggedIn = computed(() => state.loggedIn)

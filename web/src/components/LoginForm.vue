@@ -1,5 +1,5 @@
 <template>
-    <form class="form">
+    <form class="form" @submit.prevent="submit">
         <div class="form-fields">
             <div class="form-field" v-for="(field, i) in fields" :key="i">
                 <div class="field-title">{{ field.title }}</div>
@@ -9,7 +9,7 @@
             </div>
         </div>
         <div class="submit">
-            <AppButton text="Login" @click="submit" />
+            <AppButton text="Login" type="submit" />
         </div>
     </form>
 </template>

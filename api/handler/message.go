@@ -1,14 +1,15 @@
 package handler
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/intrntsrfr/vue-ws-test"
-	"github.com/intrntsrfr/vue-ws-test/database"
-	"github.com/intrntsrfr/vue-ws-test/structs"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	api "github.com/intrntsrfr/vue-ws-test"
+	"github.com/intrntsrfr/vue-ws-test/database"
+	"github.com/intrntsrfr/vue-ws-test/structs"
 )
 
 type MessageHandler struct {
@@ -52,11 +53,11 @@ func (h *MessageHandler) postMessage() gin.HandlerFunc {
 			c.JSON(http.StatusUnauthorized, ErrorResponse{CodeError, "user does not exist"})
 			return
 		}
-		user.Password = ""
-
+		userCopy := *user
+		userCopy.Password = ""
 		msg, _ := h.db.CreateMessage(&structs.Message{
 			ID:        uuid.New(),
-			Author:    user,
+			Author:    &userCopy,
 			Content:   strings.TrimSpace(postMessageBody.Content),
 			Timestamp: time.Now(),
 			Reactions: []*structs.Reaction{},
